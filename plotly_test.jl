@@ -30,6 +30,26 @@ p = let
 	Plot(surface(x=g,y=f,z=z))
 end;
 
+# ╔═╡ 3204aa8e-98e2-4edf-90f2-8989a3ee8492
+function Base.show(io::IO, mimetype::MIME"text/html", p::PlotlyBase.Plot)
+	show(io,mimetype,@htl("""
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+	<div style="height: auto">
+		<script id=plotly-show>
+			const PLOT = this ?? document.createElement("div");
+			(this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(json(p))));
+			return PLOT
+		</script>
+	</div>
+"""))
+end
+
+# ╔═╡ 3e7b639c-6ac7-4ee5-afbc-cac27dfd10c0
+@bind default_show Clock(1.5)
+
+# ╔═╡ 8a36d119-b382-43df-9ec5-9332b88bb5b4
+default_show; p
+
 # ╔═╡ 77e75c21-6e23-42e0-af3e-add446b5ae25
 show1(p) = @htl("""	
 	<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
@@ -104,6 +124,9 @@ tick3; show3(p)
 # ╠═f0d2c987-d197-4ba6-ad6c-73a86abea6bb
 # ╠═da36057c-227f-4970-a86f-266008dccdb1
 # ╠═17d68c7d-b785-4274-8397-4f84ad55bdcb
+# ╠═3204aa8e-98e2-4edf-90f2-8989a3ee8492
+# ╠═3e7b639c-6ac7-4ee5-afbc-cac27dfd10c0
+# ╠═8a36d119-b382-43df-9ec5-9332b88bb5b4
 # ╠═77e75c21-6e23-42e0-af3e-add446b5ae25
 # ╠═b7d3cc4d-a11e-4d56-877a-10ab0b44f75e
 # ╠═2e56d16d-755d-49a3-b0c6-0556853fcecd
