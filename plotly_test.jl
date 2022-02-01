@@ -19,6 +19,15 @@ using PlotlyBase, HypertextLiteral
 # ╔═╡ da36057c-227f-4970-a86f-266008dccdb1
 using PlutoUI
 
+# ╔═╡ 07b75d84-affd-4250-a139-5158305e4318
+html"""<style>
+main {
+    max-width: 900px;
+    align-self: flex-start;
+    margin-left: 200px;
+}
+"""
+
 # ╔═╡ 17d68c7d-b785-4274-8397-4f84ad55bdcb
 p = let
 	n = 200
@@ -36,8 +45,8 @@ function Base.show(io::IO, mimetype::MIME"text/html", p::PlotlyBase.Plot)
 <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
 	<div style="height: auto">
 		<script id=plotly-show>
-			const PLOT = this ?? document.createElement("div");
-			(this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(json(p))));
+			const PLOT = this ?? document.createElement("div"); 
+			(this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(json(p.data))),$(HypertextLiteral.JavaScript(json(p.layout))),{responsive: true});
 			return PLOT
 		</script>
 	</div>
@@ -55,24 +64,21 @@ show1(p) = @htl("""
 	<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
 	<div style="height: auto">
 		<script id=show1>
-		const PLOT = this ?? document.createElement("div");
-	  (this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(json(p))));
-		return PLOT
+		const PLOT = currentScript.parentElement;
+	  (this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(json(p))),{responsive:true});
 		</script>
 	</div>
 """)
 
 # ╔═╡ b7d3cc4d-a11e-4d56-877a-10ab0b44f75e
 begin
-	# Custom abstract-trace array to string function
-TraceData(data::Array{<:AbstractTrace}) = join(["[",join(string.(data),","),"]"])
 
 show2(p) = @htl("""
 	<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
 	<div style="height: auto">
 		<script id=show2>
 		const PLOT = this ?? document.createElement("div"); // currentScript.parentElement.firstElementChild;
-			(this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(TraceData(p.data))),$(HypertextLiteral.JavaScript(string(p.layout))));
+			(this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(TraceData(p.data))),$(HypertextLiteral.JavaScript(string(p.layout))),{responsive: true});
 		return PLOT
 		</script>
 	</div>
@@ -102,6 +108,21 @@ plotlylower(x) = x
 	""")
 end
 
+# ╔═╡ 607c2c89-363b-4d82-8818-290cc415fec3
+show4(p) = 	@htl("""
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+	<div style="height: auto">
+		<script id=plotly-show>
+			const PLOT = this ?? document.createElement("div"); 
+			(this == null ? Plotly.newPlot : Plotly.react)(PLOT,$(HypertextLiteral.JavaScript(json(p.data))),$(HypertextLiteral.JavaScript(json(p.layout))),{responsive: true});
+			return PLOT
+		</script>
+	</div>
+""")
+
+# ╔═╡ 6e3910aa-00a5-4ae4-93b1-500e303e4a05
+show4(p)
+
 # ╔═╡ 0526b2d9-58f0-4479-a4f9-c84321876f4e
 @bind tick1 Clock()
 
@@ -121,6 +142,7 @@ tick2; show2(p)
 tick3; show3(p)
 
 # ╔═╡ Cell order:
+# ╠═07b75d84-affd-4250-a139-5158305e4318
 # ╠═f0d2c987-d197-4ba6-ad6c-73a86abea6bb
 # ╠═da36057c-227f-4970-a86f-266008dccdb1
 # ╠═17d68c7d-b785-4274-8397-4f84ad55bdcb
@@ -130,6 +152,8 @@ tick3; show3(p)
 # ╠═77e75c21-6e23-42e0-af3e-add446b5ae25
 # ╠═b7d3cc4d-a11e-4d56-877a-10ab0b44f75e
 # ╠═2e56d16d-755d-49a3-b0c6-0556853fcecd
+# ╠═607c2c89-363b-4d82-8818-290cc415fec3
+# ╠═6e3910aa-00a5-4ae4-93b1-500e303e4a05
 # ╠═0526b2d9-58f0-4479-a4f9-c84321876f4e
 # ╠═fb68fae6-d91c-4edb-882b-78353346c279
 # ╠═bc33a205-f0f4-4b0b-ab9a-8ae34deb6b25
