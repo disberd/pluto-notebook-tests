@@ -4,121 +4,219 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 45eaf798-5013-42ff-adbc-0456de7bacec
-begin
-	using PlotlyBase
-	using HypertextLiteral
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
 end
 
-# ╔═╡ 5411e074-ec14-4b4f-88d2-0f3c52c84158
-htl_js(x) = HypertextLiteral.JavaScript(x)
+# ╔═╡ 21c2e141-f112-475f-a610-d37349eaf4ea
+begin
+	using DelimitedFiles
+	using PlutoPlotly
+	using Unzip
+	using PlutoUI
+end
 
-# ╔═╡ 29761206-04fd-4ff3-bcce-f57ced86917c
+# ╔═╡ 7ee34aa0-e77f-41b0-a1c7-49caf3c1212e
+TableOfContents()
+
+# ╔═╡ 4efec19e-6293-4caa-bb99-e3abbf3ca997
+csv_file = download("https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv")
+
+# ╔═╡ 6b627b80-44dc-4e31-84cc-d29effacd65d
+data, headers = let
+	mat, header = readdlm(csv_file, ','; skipstart = 1, header = true)
+	vect = vec(mat[:, 2:13] |> permutedims)
+	filter(x -> x isa Number ? true : false, vect) |> x -> float.(x), header
+end
+
+# ╔═╡ cf6e96a5-2931-4dc6-b0a8-e45b2ebd6548
 md"""
-## Unique Counter
+## circle_3d
 """
 
-# ╔═╡ 4c56ff7b-4f49-43d3-b2ab-5de24e387de9
-function unique_io_counter(io::IO, identifier = "script_id")
-	!get(io, :is_pluto, false) && return -1 # We simply return -1 if not inside pluto
-	# By default pluto inserts a dict inside the IOContext under key :extra_items. See https://github.com/fonsp/Pluto.jl/blob/10747db7ed512c6b3a9881c5cdb2a4daadea766d/src/runner/PlutoRunner.jl#L786
-	dict = io.dict[:extra_items]
-	# The dict has key of type Tuple{ObjectID, Int64}, so we a custom key with our custom identifier where we will store the counter 
-	key = (objectid(identifier), 0)
-	counter = get(dict, key, 0) + 1
-	# Update the counter on the dict that is shared within this IOContext
-	dict[key] = counter
-end
-
-# ╔═╡ 8853604b-cc75-4dc8-a4fd-b59998383672
-# Using the unique_io_counter inside the show3 method allows to have unique counters for plots within a same cell.
-# This does not ensure that the same plot object is always given the same unique script id if the plots are added to the cells with `if...end` blocks.
-function plotly_script_id(io::IO)
-	# counter = unique_io_counter(io, "plotly-plot")
-	counter = 3
-	return "plot_$counter"
-end
-
-# ╔═╡ a56243b9-71c2-485a-bfc5-ea015f4d7c8f
-begin
-Base.@kwdef struct PlutoPlot
-	Plot::PlotlyBase.Plot
-	plotly_listeners::Dict{String, Any} = Dict{String, Any}()
-end
-PlutoPlot(p::PlotlyBase.Plot; kwargs...) = PlutoPlot(;kwargs..., Plot = p)
-
-
-function _show(pp::PlutoPlot, script_id::String = "pluto-plotly-div")
-@htl """
-	<script id=$(script_id)>
-		// Load the plotly library
-		if (!window.Plotly) {
-			const {plotly} = await import("https://cdn.plot.ly/plotly-2.11.1.min.js")
-		}
-
-		// Flag to check if this cell was  manually ran or reactively ran
-		const firstRun = this ? false : true
-		const PLOT = this ?? document.createElement("div");
-		const parent = currentScript.parentElement
-		const isPlutoWrapper = parent.classList.contains('raw-html-wrapper')
-
-		// Publish the plot object to JS
-		let plot_obj = $(htl_js(PlotlyBase.json(pp.Plot)))
-
-		if (firstRun) {
-			// It seem plot divs would not autosize themself inside flexbox containers without this
-  			parent.appendChild(PLOT)
-		}
-
-		// Get the listeners
-		const plotly_listeners = $(pp.plotly_listeners)
-
-		// If width is not specified, set it to 100%
-		PLOT.style.width = plot_obj.layout.width ? "" : "100%"
-		
-		// For the height we have to also put a fixed value in case the plot is put on a non-fixed-size container (like the default wrapper)
-		PLOT.style.height = plot_obj.layout.height ? "" :
-			(isPlutoWrapper || parent.clientHeight == 0) ? "400px" : "100%"
-	
-		Plotly.react(PLOT, plot_obj).then(() => {
-			// Assign the Plotly event listeners
-			for (const [key, value] of Object.entries(plotly_listeners)) {
-			    PLOT.on(key, value)
-			}
-		}
+# ╔═╡ f9e44e12-5134-47eb-9d29-e78d46e2bf7d
+function circle_3d(val, offset, zid, color)
+vals = map(0:100) do i
+			angle = 2π * (i+3)/106
+			y,x = sincos(angle) .* (val+offset)
+			z = zid
+			x,y,z
+		end
+		x,y,z = unzip(vals)
+		plot = scatter3d(;(;x,y,z)..., 
+			mode = "lines", 
+			line = attr(
+				color = color, 
+				width = 6,
+			),
+			showlegend = false,
+			hoverinfo = "skip",
 		)
 
-		invalidation.then(() => {
-			// Remove all listeners
-			PLOT.removeAllListeners()
-		})
+		annot = attr(
+					text = "$(val)° C",
+					font = attr(
+						color = color
+					),
+					z = zid,
+					y = 0,
+					x = offset + val,
+					showarrow = false,
+					# bgcolor = "black",
+				)
+		return plot, annot
+end
 
-		return PLOT
-	</script>
+# ╔═╡ 03c76328-4337-46a6-a215-fb43f69ae8aa
+md"""
+## Plot
 """
-end
-function Base.show(io::IO, mime::MIME"text/html", plt::PlutoPlot)
-	script_id = plotly_script_id(io)
-	# show(io, mime, _show(plt, plotly_script_id(io)))
-	show(io, mime, _show(plt))
-end
-end
 
-# ╔═╡ 3296721a-6640-454d-89fb-0b26092060e2
-PlutoPlot(Plot(rand(10)))
+# ╔═╡ 188c05a7-2d9f-401d-a4df-45d8c38903c0
+@bind asd Slider(eachindex(data))
 
-# ╔═╡ 0c979f81-f7ef-4493-b348-c8f5ed169e7a
-@htl "$(PlutoPlot(Plot(rand(10))))"
+# ╔═╡ 40994cca-88e9-464b-aee6-f0a856a3cf70
+md"""
+## months
+"""
+
+# ╔═╡ 7043a666-fc99-4e89-a94d-d66463cedc2a
+months(offset,zid) = map(enumerate(headers[2:13])) do e
+	i,m = e
+	angle = (i-1) * 2π/12
+	y,x = sincos(-angle) .* (offset + 2)
+	attr(;
+		x,
+		y,
+		z = zid,
+		text = "<b>$(uppercase(m))</b>",
+		font = attr(
+			color = "yellow",
+			size = 16,
+		),
+		showarrow = false,
+	)
+end;
+
+# ╔═╡ 0d69cbcc-f322-412d-98a2-59e7ba033ab2
+let
+	offset = 5
+	scale = 1/length(data)
+	temp_plot = let
+		vals = map(1:asd) do i
+			angle = mod(i-1,12) * 2π/12
+			y,x = sincos(-angle) .* (data[i] + offset)
+			z = scale * (i-1)
+			x,y,z
+		end
+		x,y,z = unzip(vals)
+		scatter3d(;x,y,z, mode = "lines", line = attr(
+			color = data,
+			width = 10,
+		),
+		showlegend = false,
+		)
+	end
+	circs, annots = let
+		lol = map((-1,0,+1),("yellow","green","yellow")) do val,col
+			circle_3d(val,offset, asd * scale, col)
+		end
+		unzip(lol)
+	end
+	plot_data = [
+		# Temperature data
+		temp_plot,	
+		circs...
+	]
+	p = plot(plot_data, Layout(
+		scene = attr(
+			xaxis = attr(
+				visible = false,
+				# range = [-1,1] .* 6,
+			),			
+			yaxis = attr(
+				visible = false,
+				# range = [-1,1] .* 6,
+			),
+			zaxis = attr(
+				visible = false,
+				range = [-.1,1.1],
+			),
+			aspectratio = attr(
+				x = 1.75,
+				y = 1.75,
+				z = 2,
+			),
+			camera = attr(
+				eye = attr(
+					x = 0,
+					y = 0,
+					z = 1.25,
+				),
+				center = attr(
+					z = 0,
+				),
+				projection_type = "orthographic",
+			),
+			annotations = [
+				# Text of degrees circles
+				annots...,
+				# Months on the outside
+				months(offset,asd*scale)...,
+				# Year in the middle
+				attr(
+					x = 0,
+					y = 0,
+					z = asd*scale,
+					showarrow = false,
+					text = "<b>$(1880 + floor(Int,asd/12))</b>",
+					font = attr(
+						color = "yellow",
+						size = 35,
+					),
+				),
+			]
+		),
+		xaxis = attr(
+			visible = false
+		),
+		yaxis = attr(
+			visible = false
+		),
+		uirevision = 1,
+		height = 600,
+		paper_bgcolor = "black",
+		# plot_bgcolor = "rgba(0,0,0,0)",
+	))
+	push!(p.script_contents, htl_js("
+	PLOT.style.height = plot_obj.layout.height + 'px' 	
+	//debugger
+	"))
+	# add_plotly_listener!(p, "plotly_relayouting", "e => {
+	# console.log(e)
+	# console.log(plot_obj.layout.scene.camera.eye)
+	# }")
+	p
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+PlutoPlotly = "8e989ff0-3d88-8e9f-f020-2b208a939ff0"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Unzip = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
 
 [compat]
-HypertextLiteral = "~0.9.3"
-PlotlyBase = "~0.8.18"
+PlutoPlotly = "~0.3.2"
+PlutoUI = "~0.7.38"
+Unzip = "~0.1.2"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -127,6 +225,12 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.7.1"
 manifest_format = "2.0"
+
+[[deps.AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.4"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -183,10 +287,22 @@ git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
+[[deps.Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
 [[deps.HypertextLiteral]]
 git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
 uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 version = "0.9.3"
+
+[[deps.IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -263,9 +379,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "85b5da0fa43588c75bb1ff986493443f821c70b7"
+git-tree-sha1 = "621f4f3b4977325b9128d5fae7a8b4829a0c2222"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.2.3"
+version = "2.2.4"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -276,6 +392,18 @@ deps = ["ColorSchemes", "Dates", "DelimitedFiles", "DocStringExtensions", "JSON"
 git-tree-sha1 = "180d744848ba316a3d0fdf4dbd34b77c7242963a"
 uuid = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
 version = "0.8.18"
+
+[[deps.PlutoPlotly]]
+deps = ["AbstractPlutoDingetjes", "HypertextLiteral", "InteractiveUtils", "LaTeXStrings", "Markdown", "PlotlyBase", "PlutoUI", "Reexport"]
+git-tree-sha1 = "2fa481d57ce1b8ab50259017819706ea46de9252"
+uuid = "8e989ff0-3d88-8e9f-f020-2b208a939ff0"
+version = "0.3.2"
+
+[[deps.PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "670e559e5c8e191ded66fa9ea89c97f10376bb4c"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.38"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -325,6 +453,10 @@ uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 
+[[deps.Test]]
+deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
+uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
@@ -336,6 +468,11 @@ version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[[deps.Unzip]]
+git-tree-sha1 = "34db80951901073501137bdbc3d5a8e7bbd06670"
+uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
+version = "0.1.2"
 
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
@@ -355,13 +492,16 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╠═45eaf798-5013-42ff-adbc-0456de7bacec
-# ╠═5411e074-ec14-4b4f-88d2-0f3c52c84158
-# ╠═a56243b9-71c2-485a-bfc5-ea015f4d7c8f
-# ╠═3296721a-6640-454d-89fb-0b26092060e2
-# ╠═0c979f81-f7ef-4493-b348-c8f5ed169e7a
-# ╠═29761206-04fd-4ff3-bcce-f57ced86917c
-# ╠═4c56ff7b-4f49-43d3-b2ab-5de24e387de9
-# ╠═8853604b-cc75-4dc8-a4fd-b59998383672
+# ╠═21c2e141-f112-475f-a610-d37349eaf4ea
+# ╠═7ee34aa0-e77f-41b0-a1c7-49caf3c1212e
+# ╠═4efec19e-6293-4caa-bb99-e3abbf3ca997
+# ╠═6b627b80-44dc-4e31-84cc-d29effacd65d
+# ╟─cf6e96a5-2931-4dc6-b0a8-e45b2ebd6548
+# ╠═f9e44e12-5134-47eb-9d29-e78d46e2bf7d
+# ╟─03c76328-4337-46a6-a215-fb43f69ae8aa
+# ╟─188c05a7-2d9f-401d-a4df-45d8c38903c0
+# ╠═0d69cbcc-f322-412d-98a2-59e7ba033ab2
+# ╟─40994cca-88e9-464b-aee6-f0a856a3cf70
+# ╠═7043a666-fc99-4e89-a94d-d66463cedc2a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
