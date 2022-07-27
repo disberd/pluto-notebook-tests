@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.19.0
 
 using Markdown
 using InteractiveUtils
@@ -30,8 +30,14 @@ TableOfContents()
 # ╔═╡ d9e12866-0b72-42f7-a8e0-348c9c310753
 angs = Ref(0.0)
 
+# ╔═╡ d2c4016e-b3e1-4de3-a3a5-06342c68fcb3
+@bind diogesu Slider(1:10)
+
+# ╔═╡ a6f5ec30-3077-47ee-bc40-18eeb4d3f109
+diogesu
+
 # ╔═╡ e712e30f-9877-4a2a-b138-bd68c6227ca8
-@bind cc Clock()
+@bind cc Clock(.1)
 
 # ╔═╡ 72b02126-fbbd-4dd9-ae22-83683a2f75c9
 ang = let
@@ -64,7 +70,7 @@ function upangs()
 end
 
 # ╔═╡ f6a12c28-3dd6-47b3-94d1-b2750b4c3805
-@bind boda Clock()
+@bind boda Clock(.1)
 
 # ╔═╡ b1cff3e0-c445-4665-a0d9-d746c3bc605f
 let
@@ -843,6 +849,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═17f92f1e-b8e9-11ec-2be7-e9b98d93fa8f
 # ╠═1960e778-cfc2-4c2f-aafd-b5170663fefa
 # ╠═d9e12866-0b72-42f7-a8e0-348c9c310753
+# ╠═d2c4016e-b3e1-4de3-a3a5-06342c68fcb3
+# ╠═a6f5ec30-3077-47ee-bc40-18eeb4d3f109
 # ╠═e712e30f-9877-4a2a-b138-bd68c6227ca8
 # ╠═72b02126-fbbd-4dd9-ae22-83683a2f75c9
 # ╠═0b308645-dbe1-4699-b14f-abd6478c0e7a
@@ -865,7 +873,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═653780c7-0b8f-4103-972f-223065cad328
 # ╠═4d4f3d75-a75d-4bb1-a263-8f1e3ff0e1fc
 # ╠═3e35fe43-6ba0-4d31-a5dd-31351c47ff08
-# ╠═4a5aad49-115f-400d-9b2f-8647b7616a62
+# ╟─4a5aad49-115f-400d-9b2f-8647b7616a62
 # ╠═82bf9638-506e-4189-8f9d-f8d918d3da95
 # ╠═dd9449ee-17ef-4948-8589-f76a745c96a9
 # ╟─00000000-0000-0000-0000-000000000001
